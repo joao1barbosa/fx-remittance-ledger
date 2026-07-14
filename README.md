@@ -37,6 +37,34 @@ without returning the money would strand the customer's balance. I kept to the t
 flagged the assumption deliberately: because `deposit.expired` is a durable event, swapping the
 reaction to a refund reactor later is additive — no migration, no lost facts.
 
+**Compliance screening runs as a synchronous command here; production would trigger it from a
+reactor.** Before conversion the operation passes the screening gate — identity, sanctions, PEP,
+adverse media. In this slice screening is an explicit command on the aggregate: the identity
+provider is called in the application handler and its verdict is passed into the pure aggregate as
+data, which records `compliance.approved` (the gate opens) or `compliance.review_required` (the
+operation pauses — a match never proceeds on its own). Conversion refuses unless the operation is
+approved. This keeps a single consistency boundary and makes the gate trivially testable.
+
+**Two deliberate simplifications, both additive later.** (1) In production the screening call
+belongs in a reactor on `deposit.confirmed` — a genuinely external, latency-bound service — so
+deposit confirmation never blocks on a third party; here it is driven synchronously. (2)
+`compliance.review_required` only sets the status; the manual-review resolution is not implemented.
+When a human resolves a review it yields either `approved` (proceed) or `rejected`, and
+`compliance.rejected` drives `refund.initiated` — a router that, on the event, dispatches to the
+correct provider's refund worker (per-provider, since each rail refunds differently). Because the
+aggregate owns the same events and the same conversion invariant either way, adding the reactor, the
+review resolution, and the refund router later is additive — no new migration, no lost facts.
+
+**Confirmation is terminal for the deposit step — it wins over the window.** Once a deposit is
+confirmed, the operation stops watching the clock: a *second* deposit is refused as "already
+confirmed" rather than re-evaluated against the window, even if it arrives after `expiresAt`. This
+is a deliberate guard ordering inside `confirmDeposit` — the idempotency check (same `providerRef` →
+no new fact) and the single-deposit check (different `providerRef` → refuse) both run *before* the
+late-window check. So a confirmed operation can never be retroactively expired by a straggler; the
+window only governs the *first* deposit. The alternative — letting a late straggler expire an
+already-confirmed operation — would let a duplicate webhook unwind a settled deposit, which is
+exactly the kind of lost fact event sourcing exists to prevent.
+
 ## How this was built
 
 I used an AI coding agent as a pair, deliberately guarded by tests. The split was explicit: I own
