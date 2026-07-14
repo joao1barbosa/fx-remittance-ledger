@@ -41,8 +41,8 @@ final class FxOperation extends AggregateRoot
         }
 
         // quotedUsdCents = round-half-up(brlCents * rateScaled * netBps / (SCALE * 10_000))
-        // ponytail: integer-exact to ~46M BRL/op — the 2*N doubling below is the
-        // binding int64 limit; switch to brick/math if larger amounts are ever needed.
+        // integer-exact to ~46M BRL/op — the 2*N doubling below is the binding int64 limit;
+        // switch to brick/math if larger amounts are ever needed.
         $netBps = 10_000 - $spreadBps - $taxesBps;
         $n = $brlAmount->cents * $rate->scaled * $netBps;
         $d = Rate::SCALE * 10_000;
