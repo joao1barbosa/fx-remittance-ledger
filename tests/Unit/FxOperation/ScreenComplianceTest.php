@@ -2,7 +2,7 @@
 
 use App\Domain\FxOperation\ComplianceDecision;
 use App\Domain\FxOperation\DepositProvider;
-use App\Domain\FxOperation\Events\ComplianceCleared;
+use App\Domain\FxOperation\Events\ComplianceApproved;
 use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\QuoteCreated;
 use App\Domain\FxOperation\FxOperation;
@@ -34,12 +34,11 @@ function confirmedDeposit(): array
     ];
 }
 
-it('clears compliance on a confirmed deposit', function () {
+it('approves compliance on a confirmed deposit', function () {
     FxOperation::fake('op-123')
         ->given(confirmedDeposit())
-        ->when(fn (FxOperation $op) => $op->clearCompliance(
-            decision: ComplianceDecision::Cleared,
-            at: new DateTimeImmutable('2026-07-14 12:06:00'),
+        ->when(fn (FxOperation $op) => $op->screenCompliance(
+            decision: ComplianceDecision::Approved,
         ))
-        ->assertRecorded(new ComplianceCleared(operationId: 'op-123'));
+        ->assertRecorded(new ComplianceApproved(operationId: 'op-123'));
 });

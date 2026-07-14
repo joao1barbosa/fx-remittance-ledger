@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\FxOperation;
 
-use App\Domain\FxOperation\Events\ComplianceCleared;
+use App\Domain\FxOperation\Events\ComplianceApproved;
 use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\DepositExpired;
 use App\Domain\FxOperation\Events\OperationCancelled;
@@ -30,8 +30,8 @@ final class FxOperation extends AggregateRoot
     /** Once cancelled the operation is terminal; every command refuses. */
     private bool $cancelled = false;
 
-    /** Set once compliance clears; the future convert() will refuse until it is. */
-    private bool $complianceCleared = false;
+    /** The screening verdict, null until screened; the future convert() reads it. */
+    private ?ComplianceDecision $complianceDecision = null;
     /**
      * Price a remittance and open the quote window. Pure: rate, spread, taxes
      * and the current instant are passed in as data — the aggregate never
@@ -158,13 +158,12 @@ final class FxOperation extends AggregateRoot
     }
 
     /**
-     * Record the compliance screening verdict. The provider is called in the
+     * Triage the compliance screening verdict. The provider is called in the
      * application handler; its decision arrives here as data (same seam as the
      * rate). Screening runs against a confirmed deposit, so it refuses before one.
      */
-    public function clearCompliance(
+    public function screenCompliance(
         ComplianceDecision $decision,
-        DateTimeImmutable $at,
     ): static {
         $this->assertNotCancelled();
 
@@ -172,13 +171,13 @@ final class FxOperation extends AggregateRoot
             throw new DomainException('Cannot screen compliance before a deposit is confirmed.');
         }
 
-        $this->recordThat(new ComplianceCleared(operationId: $this->uuid()));
+        $this->recordThat(new ComplianceApproved(operationId: $this->uuid()));
 
         return $this;
     }
 
-    protected function applyComplianceCleared(ComplianceCleared $event): void
+    protected function applyComplianceApproved(ComplianceApproved $event): void
     {
-        $this->complianceCleared = true;
+        $this->complianceDecision = ComplianceDecision::Approved;
     }
 }

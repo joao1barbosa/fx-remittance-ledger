@@ -6,7 +6,7 @@ namespace App\Domain\FxOperation\Events;
 
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
 
-final class ComplianceCleared extends ShouldBeStored
+final class ComplianceApproved extends ShouldBeStored
 {
     public function __construct(
         public string $operationId,
