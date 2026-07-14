@@ -62,3 +62,14 @@ it('refuses compliance screening once the operation is cancelled', function () {
 
     $fake->assertNothingRecorded();
 });
+
+it('screens compliance at most once', function () {
+    $history = [...confirmedDeposit(), new ComplianceApproved(operationId: 'op-123')];
+    $fake = FxOperation::fake('op-123')->given($history);
+
+    expect(fn () => $fake->when(fn (FxOperation $op) => $op->screenCompliance(
+        decision: ComplianceDecision::Approved,
+    )))->toThrow(DomainException::class);
+
+    $fake->assertNothingRecorded();
+});
