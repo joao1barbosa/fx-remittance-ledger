@@ -123,6 +123,9 @@ final class FxOperation extends AggregateRoot
             // flood of re-deliveries is the webhook handler's job (warn/alert there).
             return $this;
         }
+        if ($this->depositProviderRef !== null) {
+            throw new DomainException('Operation already has a confirmed deposit.');
+        }
         if ($at > $this->expiresAt) {
             // A deposit past the window cascades: the late arrival is a fact, and
             // its consequence is cancellation. We assume the PSP rejects/refunds
