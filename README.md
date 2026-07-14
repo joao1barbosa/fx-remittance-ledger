@@ -28,6 +28,15 @@ _TODO (Wed): verified clean-clone steps — `docker compose up -d`, `php artisan
 _TODO (Wed): fake providers behind interfaces, no UI, PIX/BRL only, no retry/backoff machinery —
 the honest cuts made under a time box._
 
+**Late deposit → cancel, not refund (a stated assumption).** `deposit.expired` cascades to
+`operation.cancelled`, not `refund.initiated`. This assumes the payment provider rejects or refunds
+a deposit that lands after the quote window *upstream*, so no customer funds are ever held on our
+side (call it "Mundo B"). On a raw-PIX rail ("Mundo A") a late webhook would mean funds already
+settled and irreversibly received — there the correct reaction is `refund.initiated`, since cancelling
+without returning the money would strand the customer's balance. I kept to the take-home's flow but
+flagged the assumption deliberately: because `deposit.expired` is a durable event, swapping the
+reaction to a refund reactor later is additive — no migration, no lost facts.
+
 ## How this was built
 
 I used an AI coding agent as a pair, deliberately guarded by tests. The split was explicit: I own

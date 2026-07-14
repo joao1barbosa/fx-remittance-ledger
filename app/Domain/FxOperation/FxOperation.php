@@ -6,6 +6,7 @@ namespace App\Domain\FxOperation;
 
 use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\DepositExpired;
+use App\Domain\FxOperation\Events\OperationCancelled;
 use App\Domain\FxOperation\Events\QuoteCreated;
 use App\Domain\Shared\Currency;
 use App\Domain\Shared\Money;
@@ -24,6 +25,9 @@ final class FxOperation extends AggregateRoot
 
     /** The confirmed deposit's ref, if any — makes confirmDeposit idempotent. */
     private ?string $depositProviderRef = null;
+
+    /** Once cancelled the operation is terminal; every command refuses. */
+    private bool $cancelled = false;
     /**
      * Price a remittance and open the quote window. Pure: rate, spread, taxes
      * and the current instant are passed in as data — the aggregate never
@@ -82,10 +86,15 @@ final class FxOperation extends AggregateRoot
         $this->depositProviderRef = $event->providerRef;
     }
 
+    protected function applyOperationCancelled(OperationCancelled $event): void
+    {
+        $this->cancelled = true;
+    }
+
     /**
      * Confirm the incoming PIX deposit against the open quote. The deposit
      * confirms the amount that was quoted, so brlAmount comes from replayed
-     * state — not the caller. Pure: the instant is passed in.
+     * state, not the caller.
      */
     public function confirmDeposit(
         DepositProvider $provider,
@@ -100,13 +109,22 @@ final class FxOperation extends AggregateRoot
         }
         if ($this->depositProviderRef === $providerRef) {
             // Same deposit reported twice — one effect, no new fact. Observing a
-            // flood of re-deliveries is the webhook handler's job (warn/alert
-            // there), not the aggregate's: it must stay pure and replay-safe.
-            // ponytail: handler logs the no-op when we build the idempotent webhook.
+            // flood of re-deliveries is the webhook handler's job (warn/alert there).
             return $this;
         }
         if ($at > $this->expiresAt) {
+            // A deposit past the window cascades: the late arrival is a fact, and
+            // its consequence is cancellation. We assume the PSP rejects/refunds
+            // late deposits upstream, so no funds are held here, hence cancel, not refund.
+            // On a raw-PIX rail a late webhook would mean settled funds, and this branch
+            // would instead emit refund.initiated.
+
+            // See README "What was left out and why".
             $this->recordThat(new DepositExpired(operationId: $this->uuid()));
+            $this->recordThat(new OperationCancelled(
+                operationId: $this->uuid(),
+                reason: CancellationReason::DepositWindowElapsed,
+            ));
 
             return $this;
         }
