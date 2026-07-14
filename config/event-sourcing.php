@@ -114,6 +114,9 @@ return [
         Spatie\EventSourcing\Support\ModelIdentifierNormalizer::class,
         Symfony\Component\Serializer\Normalizer\DateTimeNormalizer::class,
         Symfony\Component\Serializer\Normalizer\ArrayDenormalizer::class,
+        // Serializes backed enums (Currency) to their scalar value instead of an
+        // object; without it Symfony tries to `new Currency(...)` on the way back.
+        Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer::class,
         Spatie\EventSourcing\Support\ObjectNormalizer::class,
     ],
 
