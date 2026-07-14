@@ -52,3 +52,13 @@ it('refuses compliance screening before a deposit is confirmed', function () {
 
     $fake->assertNothingRecorded();
 });
+
+it('refuses compliance screening once the operation is cancelled', function () {
+    $fake = FxOperation::fake('op-123')->given(cancelledOperation());
+
+    expect(fn () => $fake->when(fn (FxOperation $op) => $op->screenCompliance(
+        decision: ComplianceDecision::Approved,
+    )))->toThrow(DomainException::class);
+
+    $fake->assertNothingRecorded();
+});
