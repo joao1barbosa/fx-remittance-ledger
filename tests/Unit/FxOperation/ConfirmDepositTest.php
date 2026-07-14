@@ -1,8 +1,10 @@
 <?php
 
+use App\Domain\FxOperation\CancellationReason;
 use App\Domain\FxOperation\DepositProvider;
 use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\DepositExpired;
+use App\Domain\FxOperation\Events\OperationCancelled;
 use App\Domain\FxOperation\Events\QuoteCreated;
 use App\Domain\FxOperation\FxOperation;
 use App\Domain\Shared\Currency;
@@ -56,8 +58,9 @@ it('refuses a deposit on an operation that was never quoted', function () {
 });
 
 // B — the window deviation: a deposit after expiresAt is a fact, not an error.
-// It records deposit.expired instead of deposit.confirmed (no throw).
-it('records deposit.expired when the deposit arrives after the window closes', function () {
+// It cascades two facts in order — deposit.expired (arrived late), then
+// operation.cancelled (the consequence) — and never deposit.confirmed.
+it('cancels the operation when the deposit arrives after the window closes', function () {
     FxOperation::fake('op-123')
         ->given(openQuote())
         ->when(fn (FxOperation $op) => $op->confirmDeposit(
@@ -65,7 +68,13 @@ it('records deposit.expired when the deposit arrives after the window closes', f
             providerRef: 'pix-abc',
             at: new DateTimeImmutable('2026-07-14 12:20:00'),   // 5 min past 12:15
         ))
-        ->assertRecorded(new DepositExpired(operationId: 'op-123'));
+        ->assertRecorded([
+            new DepositExpired(operationId: 'op-123'),
+            new OperationCancelled(
+                operationId: 'op-123',
+                reason: CancellationReason::DepositWindowElapsed,
+            ),
+        ]);
 });
 
 // C — invalid input at the boundary: a blank providerRef cannot identify a
