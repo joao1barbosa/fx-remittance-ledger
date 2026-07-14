@@ -1,5 +1,8 @@
 *.log
 .DS_Store
+# private agent spec — kept out of the public portfolio history
+/AGENTS.md
+/CLAUDE.md
 .env
 .env.backup
 .env.production
