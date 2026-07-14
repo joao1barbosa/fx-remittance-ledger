@@ -42,3 +42,13 @@ it('approves compliance on a confirmed deposit', function () {
         ))
         ->assertRecorded(new ComplianceApproved(operationId: 'op-123'));
 });
+
+it('refuses compliance screening before a deposit is confirmed', function () {
+    $fake = FxOperation::fake('op-123')->given(openQuote());
+
+    expect(fn () => $fake->when(fn (FxOperation $op) => $op->screenCompliance(
+        decision: ComplianceDecision::Approved,
+    )))->toThrow(DomainException::class);
+
+    $fake->assertNothingRecorded();
+});
