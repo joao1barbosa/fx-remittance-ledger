@@ -41,6 +41,8 @@ final class FxOperation extends AggregateRoot
         int $taxesBps,
         DateTimeImmutable $at,
     ): static {
+        $this->assertNotCancelled();
+
         if ($brlAmount->currency !== Currency::BRL) {
             throw new DomainException("Quote must be in BRL; got {$brlAmount->currency->value}.");
         }
@@ -91,6 +93,13 @@ final class FxOperation extends AggregateRoot
         $this->cancelled = true;
     }
 
+    private function assertNotCancelled(): void
+    {
+        if ($this->cancelled) {
+            throw new DomainException('Operation is cancelled and accepts no further commands.');
+        }
+    }
+
     /**
      * Confirm the incoming PIX deposit against the open quote. The deposit
      * confirms the amount that was quoted, so brlAmount comes from replayed
@@ -101,6 +110,8 @@ final class FxOperation extends AggregateRoot
         string $providerRef,
         DateTimeImmutable $at,
     ): static {
+        $this->assertNotCancelled();
+
         if ($this->expiresAt === null || $this->brlAmount === null) {
             throw new DomainException('Cannot confirm a deposit on an operation without an open quote.');
         }
