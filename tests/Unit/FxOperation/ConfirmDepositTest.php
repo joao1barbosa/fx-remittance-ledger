@@ -110,3 +110,45 @@ it('confirms an already-confirmed deposit at most once (idempotent by providerRe
         ))
         ->assertNothingRecorded();
 });
+
+// A quote that already expired and cancelled the operation.
+function cancelledOperation(): array
+{
+    return [...openQuote(),
+        new DepositExpired(operationId: 'op-123'),
+        new OperationCancelled(
+            operationId: 'op-123',
+            reason: CancellationReason::DepositWindowElapsed,
+        ),
+    ];
+}
+
+// STEP 2 — a cancelled operation is terminal: every command is refused with a
+// DomainException and records nothing. This closes the hole where a repeated
+// late deposit would keep recording deposit.expired.
+it('refuses a deposit once the operation is cancelled', function () {
+    $fake = FxOperation::fake('op-123')->given(cancelledOperation());
+
+    expect(fn () => $fake->when(fn (FxOperation $op) => $op->confirmDeposit(
+        provider: DepositProvider::FAKE_BANK,
+        providerRef: 'pix-late-retry',
+        at: new DateTimeImmutable('2026-07-14 12:25:00'),
+    )))->toThrow(DomainException::class);
+
+    $fake->assertNothingRecorded();
+});
+
+it('refuses a re-quote once the operation is cancelled', function () {
+    $fake = FxOperation::fake('op-123')->given(cancelledOperation());
+
+    expect(fn () => $fake->when(fn (FxOperation $op) => $op->createQuote(
+        'op-123',
+        new Money(100_000, Currency::BRL),
+        new Rate(1900),
+        spreadBps: 200,
+        taxesBps: 100,
+        at: new DateTimeImmutable('2026-07-14 12:30:00'),
+    )))->toThrow(DomainException::class);
+
+    $fake->assertNothingRecorded();
+});
