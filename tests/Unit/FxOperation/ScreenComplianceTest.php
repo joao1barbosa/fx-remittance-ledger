@@ -3,7 +3,9 @@
 use App\Domain\FxOperation\ComplianceDecision;
 use App\Domain\FxOperation\DepositProvider;
 use App\Domain\FxOperation\Events\ComplianceApproved;
+use App\Domain\FxOperation\Events\ComplianceReviewRequired;
 use App\Domain\FxOperation\Events\DepositConfirmed;
+use App\Domain\FxOperation\Events\OperationCancelled;
 use App\Domain\FxOperation\Events\QuoteCreated;
 use App\Domain\FxOperation\FxOperation;
 use App\Domain\Shared\Currency;
@@ -72,4 +74,14 @@ it('screens compliance at most once', function () {
     )))->toThrow(DomainException::class);
 
     $fake->assertNothingRecorded();
+});
+
+it('opens manual review when screening flags a match', function () {
+    FxOperation::fake('op-123')
+        ->given(confirmedDeposit())
+        ->when(fn (FxOperation $op) => $op->screenCompliance(
+            decision: ComplianceDecision::ReviewRequired,
+        ))
+        ->assertRecorded(new ComplianceReviewRequired(operationId: 'op-123'))
+        ->assertNotRecorded(OperationCancelled::class);
 });
