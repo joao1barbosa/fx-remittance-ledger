@@ -43,8 +43,6 @@ it('confirms a deposit that arrives inside the quote window', function () {
         ));
 });
 
-// A — no open quote: an operation that was never quoted has no window and no
-// quoted amount; a deposit on it is refused and no event is born.
 it('refuses a deposit on an operation that was never quoted', function () {
     $fake = FxOperation::fake('op-sem-quote');
 
@@ -57,9 +55,6 @@ it('refuses a deposit on an operation that was never quoted', function () {
     $fake->assertNothingRecorded();
 });
 
-// B — the window deviation: a deposit after expiresAt is a fact, not an error.
-// It cascades two facts in order — deposit.expired (arrived late), then
-// operation.cancelled (the consequence) — and never deposit.confirmed.
 it('cancels the operation when the deposit arrives after the window closes', function () {
     FxOperation::fake('op-123')
         ->given(openQuote())
@@ -77,8 +72,6 @@ it('cancels the operation when the deposit arrives after the window closes', fun
         ]);
 });
 
-// C — invalid input at the boundary: a blank providerRef cannot identify a
-// deposit; the command refuses and records nothing.
 it('refuses a deposit with a blank providerRef', function () {
     $fake = FxOperation::fake('op-123')->given(openQuote());
 
@@ -91,8 +84,6 @@ it('refuses a deposit with a blank providerRef', function () {
     $fake->assertNotRecorded(DepositConfirmed::class);
 });
 
-// D — idempotency: the same deposit reported twice is one effect. Replaying a
-// prior deposit.confirmed with the same providerRef records nothing new.
 it('confirms an already-confirmed deposit at most once (idempotent by providerRef)', function () {
     $history = [...openQuote(), new DepositConfirmed(
         operationId: 'op-123',
@@ -111,6 +102,24 @@ it('confirms an already-confirmed deposit at most once (idempotent by providerRe
         ->assertNothingRecorded();
 });
 
+it('refuses a second deposit with a different providerRef', function () {
+    $history = [...openQuote(), new DepositConfirmed(
+        operationId: 'op-123',
+        provider: DepositProvider::FAKE_BANK,
+        brlAmount: new Money(123456, Currency::BRL),
+        providerRef: 'pix-abc',
+    )];
+    $fake = FxOperation::fake('op-123')->given($history);
+
+    expect(fn () => $fake->when(fn (FxOperation $op) => $op->confirmDeposit(
+        provider: DepositProvider::FAKE_BANK,
+        providerRef: 'pix-other',   // different ref, still inside the window
+        at: new DateTimeImmutable('2026-07-14 12:07:00'),
+    )))->toThrow(DomainException::class);
+
+    $fake->assertNothingRecorded();
+});
+
 // A quote that already expired and cancelled the operation.
 function cancelledOperation(): array
 {
@@ -123,9 +132,6 @@ function cancelledOperation(): array
     ];
 }
 
-// STEP 2 — a cancelled operation is terminal: every command is refused with a
-// DomainException and records nothing. This closes the hole where a repeated
-// late deposit would keep recording deposit.expired.
 it('refuses a deposit once the operation is cancelled', function () {
     $fake = FxOperation::fake('op-123')->given(cancelledOperation());
 
