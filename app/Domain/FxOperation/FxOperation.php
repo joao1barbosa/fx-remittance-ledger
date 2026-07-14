@@ -170,6 +170,9 @@ final class FxOperation extends AggregateRoot
         if ($this->depositProviderRef === null) {
             throw new DomainException('Cannot screen compliance before a deposit is confirmed.');
         }
+        if ($this->complianceDecision !== null) {
+            throw new DomainException('Operation was already screened for compliance.');
+        }
 
         $this->recordThat(new ComplianceApproved(operationId: $this->uuid()));
 
