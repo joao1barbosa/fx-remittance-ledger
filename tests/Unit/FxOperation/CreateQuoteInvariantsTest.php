@@ -38,3 +38,18 @@ it('refuses negative taxes', function () {
 it('refuses spread plus taxes at or above 100%', function () {
     quoteWith(new Money(100_000, Currency::BRL), spreadBps: 6_000, taxesBps: 4_000);
 })->throws(DomainException::class);
+
+it('records nothing when an invariant is violated — failure is not a fact', function () {
+    $fake = FxOperation::fake('op-guard');
+
+    expect(fn () => $fake->when(fn (FxOperation $op) => $op->createQuote(
+        'op-guard',
+        new Money(100_000, Currency::USD),   // non-BRL: violates the currency invariant
+        new Rate(1900),
+        spreadBps: 200,
+        taxesBps: 100,
+        at: new DateTimeImmutable('2026-07-14 12:00:00'),
+    )))->toThrow(DomainException::class);
+
+    $fake->assertNothingRecorded();
+});
