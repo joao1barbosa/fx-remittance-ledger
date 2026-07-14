@@ -9,6 +9,7 @@ use App\Domain\Shared\Currency;
 use App\Domain\Shared\Money;
 use App\Domain\Shared\Rate;
 use DateTimeImmutable;
+use DomainException;
 use Spatie\EventSourcing\AggregateRoots\AggregateRoot;
 
 final class FxOperation extends AggregateRoot
@@ -26,6 +27,19 @@ final class FxOperation extends AggregateRoot
         int $taxesBps,
         DateTimeImmutable $at,
     ): static {
+        if ($brlAmount->currency !== Currency::BRL) {
+            throw new DomainException("Quote must be in BRL; got {$brlAmount->currency->value}.");
+        }
+        if ($brlAmount->cents <= 0) {
+            throw new DomainException('Quote amount must be positive.');
+        }
+        if ($spreadBps < 0 || $taxesBps < 0) {
+            throw new DomainException("Spread and taxes cannot be negative; got {$spreadBps}/{$taxesBps} bps.");
+        }
+        if ($spreadBps + $taxesBps >= 10_000) {
+            throw new DomainException("Spread plus taxes must be below 100%; got {$spreadBps}+{$taxesBps} bps.");
+        }
+
         // quotedUsdCents = round-half-up(brlCents * rateScaled * netBps / (SCALE * 10_000))
         // ponytail: integer-exact to ~46M BRL/op — the 2*N doubling below is the
         // binding int64 limit; switch to brick/math if larger amounts are ever needed.
