@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\FxOperation;
 
 use App\Domain\FxOperation\Events\ComplianceApproved;
+use App\Domain\FxOperation\Events\ComplianceReviewRequired;
 use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\DepositExpired;
 use App\Domain\FxOperation\Events\OperationCancelled;
@@ -174,7 +175,12 @@ final class FxOperation extends AggregateRoot
             throw new DomainException('Operation was already screened for compliance.');
         }
 
-        $this->recordThat(new ComplianceApproved(operationId: $this->uuid()));
+        // A match pauses the pipeline for a human — it does not cancel. The
+        // review resolution (approve/reject → refund) is a later slice.
+        $this->recordThat(match ($decision) {
+            ComplianceDecision::Approved => new ComplianceApproved(operationId: $this->uuid()),
+            ComplianceDecision::ReviewRequired => new ComplianceReviewRequired(operationId: $this->uuid()),
+        });
 
         return $this;
     }
@@ -182,5 +188,10 @@ final class FxOperation extends AggregateRoot
     protected function applyComplianceApproved(ComplianceApproved $event): void
     {
         $this->complianceDecision = ComplianceDecision::Approved;
+    }
+
+    protected function applyComplianceReviewRequired(ComplianceReviewRequired $event): void
+    {
+        $this->complianceDecision = ComplianceDecision::ReviewRequired;
     }
 }
