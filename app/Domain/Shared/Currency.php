@@ -8,4 +8,6 @@ enum Currency: string
 {
     case BRL = 'BRL';
     case USD = 'USD';
+    // dollar-backed stablecoin — the USDC conversion leg
+    case USDC = 'USDC';
 }

@@ -6,8 +6,10 @@ namespace App\Domain\FxOperation;
 
 use App\Domain\FxOperation\Events\ComplianceApproved;
 use App\Domain\FxOperation\Events\ComplianceReviewRequired;
+use App\Domain\FxOperation\Events\ConversionSlippageExceeded;
 use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\DepositExpired;
+use App\Domain\FxOperation\Events\FundsConverted;
 use App\Domain\FxOperation\Events\OperationCancelled;
 use App\Domain\FxOperation\Events\QuoteCreated;
 use App\Domain\Shared\Currency;
@@ -19,8 +21,14 @@ use Spatie\EventSourcing\AggregateRoots\AggregateRoot;
 
 final class FxOperation extends AggregateRoot
 {
+    /** 0.5% — tunable business policy. */
+    private const SLIPPAGE_TOLERANCE_BPS = 50;
+
     /** The quoted amount, remembered so a deposit confirms what was quoted. */
     private ?Money $brlAmount = null;
+
+    /** The quoted USD target; convert() compares the fill against it. */
+    private ?Money $quotedUsd = null;
 
     /** End of the quote window; a deposit after this expires instead of confirming. */
     private ?DateTimeImmutable $expiresAt = null;
@@ -85,6 +93,7 @@ final class FxOperation extends AggregateRoot
     protected function applyQuoteCreated(QuoteCreated $event): void
     {
         $this->brlAmount = $event->brlAmount;
+        $this->quotedUsd = $event->quotedUsd;
         $this->expiresAt = $event->expiresAt;
     }
 
@@ -193,5 +202,46 @@ final class FxOperation extends AggregateRoot
     protected function applyComplianceReviewRequired(ComplianceReviewRequired $event): void
     {
         $this->complianceDecision = ComplianceDecision::ReviewRequired;
+    }
+
+    /**
+     * Execute the conversion into USDC. Fail-closed gate: only an Approved
+     * decision proceeds; null (never screened) and ReviewRequired both refuse.
+     * The exchange fill arrives as data — the aggregate performs no I/O.
+     */
+    public function convert(ConversionFill $fill): static
+    {
+        if ($this->complianceDecision !== ComplianceDecision::Approved) {
+            throw new DomainException('Cannot convert before compliance is approved.');
+        }
+
+        // USDC is 1:1 with USD and the off-ramp fee lands in settlement, so the
+        // quoted USD target is the USDC target; slippage is measured in cents.
+        $slippageBps = intdiv(
+            abs($fill->usdc->cents - $this->quotedUsd->cents) * 10_000,
+            $this->quotedUsd->cents,
+        );
+
+        $this->recordThat(new FundsConverted(
+            operationId: $this->uuid(),
+            brlAmount: $this->brlAmount,
+            quotedUsd: $this->quotedUsd,
+            executedUsdc: $fill->usdc,
+            executedRate: $fill->executedRate,
+            orderRef: $fill->orderRef,
+        ));
+
+        // Out of tolerance alerts but does not halt: the customer still gets the
+        // locked quoted amount; the excess is a durable fact for reconciliation.
+        if ($slippageBps > self::SLIPPAGE_TOLERANCE_BPS) {
+            $this->recordThat(new ConversionSlippageExceeded(
+                operationId: $this->uuid(),
+                quotedUsd: $this->quotedUsd,
+                executedUsdc: $fill->usdc,
+                slippageBps: $slippageBps,
+            ));
+        }
+
+        return $this;
     }
 }
