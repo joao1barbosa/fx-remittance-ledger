@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Webhooks;
+
+use App\Application\FxOperation\ConfirmDepositHandler;
+use App\Domain\FxOperation\DepositProvider;
+use DateTimeImmutable;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+/**
+ * Per-provider inbound edge for the fake BaaS: the anti-corruption layer that
+ * turns this provider's payload shape into the canonical inputs, then delegates
+ * to the provider-agnostic ConfirmDepositHandler. All I/O and payload-shape
+ * knowledge stops here; nothing downstream knows a BaaS exists.
+ */
+final class BaasFakeWebhookController
+{
+    public function __invoke(Request $request, ConfirmDepositHandler $handler): JsonResponse
+    {
+        // TRUST BOUNDARY: reject before any work if the shared secret mismatches.
+        // ponytail: shared-secret header is enough for a fake rail; a real BaaS
+        // adapter verifies a per-provider HMAC over the raw request body.
+        abort_unless(
+            hash_equals(
+                (string) config('services.baas_fake.webhook_secret'),
+                (string) $request->header('X-Webhook-Secret'),
+            ),
+            401,
+        );
+
+        $payload = $request->validate([
+            'reference' => ['required', 'string'],
+            'end_to_end_id' => ['required', 'string'],
+            'paid_at' => ['required', 'date'],
+        ]);
+
+        // NORMALIZE: BaaS field names -> canonical, provider-agnostic inputs.
+        $handler->handle(
+            operationId: $payload['reference'],
+            provider: DepositProvider::FAKE_BANK,
+            providerRef: $payload['end_to_end_id'],
+            at: new DateTimeImmutable($payload['paid_at']),
+        );
+
+        return response()->json(status: 202);
+    }
+}
