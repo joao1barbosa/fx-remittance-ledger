@@ -11,8 +11,10 @@ use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\DepositExpired;
 use App\Domain\FxOperation\Events\FundsConverted;
 use App\Domain\FxOperation\Events\OperationCancelled;
+use App\Domain\FxOperation\Events\OperationReconciled;
 use App\Domain\FxOperation\Events\PayoutCompleted;
 use App\Domain\FxOperation\Events\QuoteCreated;
+use App\Domain\FxOperation\Events\ReconciliationDiscrepancy;
 use App\Domain\FxOperation\Events\SettlementCompleted;
 use App\Domain\FxOperation\Events\SettlementInitiated;
 use App\Domain\Shared\Currency;
@@ -53,6 +55,9 @@ final class FxOperation extends AggregateRoot
 
     /** Terminal once settled — a re-delivered webhook then no-ops, never pays twice. */
     private bool $settlementCompleted = false;
+
+    /** The payout is reconcile's positive precondition — it refuses before this. */
+    private bool $payoutCompleted = false;
     /**
      * Price a remittance and open the quote window. Pure: rate, spread, taxes
      * and the current instant are passed in as data — the aggregate never
@@ -304,6 +309,34 @@ final class FxOperation extends AggregateRoot
     protected function applySettlementCompleted(SettlementCompleted $event): void
     {
         $this->settlementCompleted = true;
+    }
+
+    protected function applyPayoutCompleted(PayoutCompleted $event): void
+    {
+        $this->payoutCompleted = true;
+    }
+
+    /**
+     * Reconcile the operation against its ledger. An internal accounting assertion,
+     * not a webhook echo: the verdict is computed at the call-site (which reads the
+     * LedgerProjector) and arrives here as data, keeping the aggregate pure — same
+     * seam as screenCompliance. Gated positively on the payout: nothing to
+     * reconcile before value is delivered. Reconciliation that cannot fail is a
+     * status flag, so the mismatch is a first-class fact, not an exception.
+     */
+    public function reconcile(bool $balanced): static
+    {
+        $this->assertNotCancelled();
+
+        if (!$this->payoutCompleted) {
+            throw new DomainException('Cannot reconcile before the payout completed.');
+        }
+
+        $this->recordThat($balanced
+            ? new OperationReconciled(operationId: $this->uuid())
+            : new ReconciliationDiscrepancy(operationId: $this->uuid()));
+
+        return $this;
     }
 
     /**
