@@ -11,7 +11,10 @@ use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\DepositExpired;
 use App\Domain\FxOperation\Events\FundsConverted;
 use App\Domain\FxOperation\Events\OperationCancelled;
+use App\Domain\FxOperation\Events\PayoutCompleted;
 use App\Domain\FxOperation\Events\QuoteCreated;
+use App\Domain\FxOperation\Events\SettlementCompleted;
+use App\Domain\FxOperation\Events\SettlementInitiated;
 use App\Domain\Shared\Currency;
 use App\Domain\Shared\Money;
 use App\Domain\Shared\Rate;
@@ -41,6 +44,12 @@ final class FxOperation extends AggregateRoot
 
     /** The screening verdict, null until screened; the future convert() reads it. */
     private ?ComplianceDecision $complianceDecision = null;
+
+    /** The USDC obtained by convert(), null until then; sizes and gates the off-ramp. */
+    private ?Money $executedUsdc = null;
+
+    /** Once the off-ramp order is open, confirmSettlement may complete it. */
+    private bool $settlementInitiated = false;
     /**
      * Price a remittance and open the quote window. Pure: rate, spread, taxes
      * and the current instant are passed in as data — the aggregate never
@@ -247,6 +256,71 @@ final class FxOperation extends AggregateRoot
                 slippageBps: $slippageBps,
             ));
         }
+
+        return $this;
+    }
+
+    protected function applyFundsConverted(FundsConverted $event): void
+    {
+        $this->executedUsdc = $event->executedUsdc;
+    }
+
+    /** The USDC available to off-ramp; the InitiateSettlementHandler sizes the order. */
+    public function usdcAmount(): ?Money
+    {
+        return $this->executedUsdc;
+    }
+
+    /**
+     * Open the USDC->USD off-ramp order. Async saga, outbound leg: the provider
+     * order ref arrives as data; the completing fill lands later via webhook.
+     * Gate mirrors convert's — only after funds are converted (executedUsdc set).
+     */
+    public function initiateSettlement(string $orderRef): static
+    {
+        $this->assertNotCancelled();
+
+        if ($this->executedUsdc === null) {
+            throw new DomainException('Cannot initiate settlement before funds are converted.');
+        }
+
+        $this->recordThat(new SettlementInitiated(
+            operationId: $this->uuid(),
+            usdcAmount: $this->executedUsdc,
+            orderRef: $orderRef,
+        ));
+
+        return $this;
+    }
+
+    protected function applySettlementInitiated(SettlementInitiated $event): void
+    {
+        $this->settlementInitiated = true;
+    }
+
+    /**
+     * Complete the off-ramp: one provider webhook, two facts. USD landed in the
+     * settlement account (the elided off-ramp fee lands here, so usd <= usdc),
+     * then that USD was delivered to the beneficiary — separate ledger legs, so
+     * separate events. Gate: only after the order was initiated.
+     */
+    public function confirmSettlement(SettlementFill $fill): static
+    {
+        $this->assertNotCancelled();
+
+        if (!$this->settlementInitiated) {
+            throw new DomainException('Cannot confirm settlement before it was initiated.');
+        }
+
+        $this->recordThat(new SettlementCompleted(
+            operationId: $this->uuid(),
+            usdAmount: $fill->usd,
+        ));
+        $this->recordThat(new PayoutCompleted(
+            operationId: $this->uuid(),
+            usdAmount: $fill->usd,
+            destinationRef: $fill->destinationRef,
+        ));
 
         return $this;
     }

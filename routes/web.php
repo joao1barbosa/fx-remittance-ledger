@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Webhooks\BaasFakeWebhookController;
+use App\Http\Controllers\Webhooks\LiquidityFakeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -8,3 +9,4 @@ Route::get('/', function () {
 });
 
 Route::post('/webhooks/baas-fake', BaasFakeWebhookController::class);
+Route::post('/webhooks/liquidity-fake', LiquidityFakeWebhookController::class);

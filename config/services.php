@@ -39,4 +39,8 @@ return [
         'webhook_secret' => env('BAAS_FAKE_WEBHOOK_SECRET'),
     ],
 
+    'liquidity_fake' => [
+        'webhook_secret' => env('LIQUIDITY_FAKE_WEBHOOK_SECRET'),
+    ],
+
 ];
