@@ -50,6 +50,9 @@ final class FxOperation extends AggregateRoot
 
     /** Once the off-ramp order is open, confirmSettlement may complete it. */
     private bool $settlementInitiated = false;
+
+    /** Terminal once settled — a re-delivered webhook then no-ops, never pays twice. */
+    private bool $settlementCompleted = false;
     /**
      * Price a remittance and open the quote window. Pure: rate, spread, taxes
      * and the current instant are passed in as data — the aggregate never
@@ -298,6 +301,11 @@ final class FxOperation extends AggregateRoot
         $this->settlementInitiated = true;
     }
 
+    protected function applySettlementCompleted(SettlementCompleted $event): void
+    {
+        $this->settlementCompleted = true;
+    }
+
     /**
      * Complete the off-ramp: one provider webhook, two facts. USD landed in the
      * settlement account (the elided off-ramp fee lands here, so usd <= usdc),
@@ -310,6 +318,11 @@ final class FxOperation extends AggregateRoot
 
         if (!$this->settlementInitiated) {
             throw new DomainException('Cannot confirm settlement before it was initiated.');
+        }
+        if ($this->settlementCompleted) {
+            // Re-delivered webhook against an already-settled operation — one effect,
+            // no second payout. Mirrors confirmDeposit's same-ref idempotent no-op.
+            return $this;
         }
 
         $this->recordThat(new SettlementCompleted(
