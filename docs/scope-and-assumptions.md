@@ -8,7 +8,7 @@ Everything outside the core guarantee is faked behind an interface or cut. Provi
 
 ## Deferred infrastructure — additive because the facts are already durable
 
-`settlement.failed` classification/retry and the refund router (below) are documented but unbuilt. The **reactors** that would push the pipeline forward on their own — compliance screening on `deposit.confirmed`, reconcile on `payout.completed` — are not wired; each handler is invoked directly. The materialized ledger (`ledger_entries`, see [Design](design.md)) carries no `currency` column — it is derivable from the account, so it is left for when a query needs it; there are no read endpoints over the table yet either. Webhook hardening beyond the shared secret (HMAC-over-body, dedup/replay storage) is left out.
+`settlement.failed` classification/retry and the refund router (below) are documented but unbuilt. The **reactors** that would push the pipeline forward on their own — compliance screening on `deposit.confirmed`, reconcile on `payout.completed` — are not wired; each handler is invoked directly. The materialized ledger (`ledger_entries`, see [Design](design.md)) has a read endpoint — `GET /operations/{id}/ledger` aggregates the persisted postings by account and reports the reconciliation verdict, all from the read-model (no replay, no aggregate retrieve): the query side of the ES/CQRS split. It carries no `currency` column — it is derivable from the account, so it is left for when a query needs it. Webhook hardening beyond the shared secret (HMAC-over-body, dedup/replay storage) is left out.
 
 ## Late deposit → cancel, not refund (a stated assumption)
 

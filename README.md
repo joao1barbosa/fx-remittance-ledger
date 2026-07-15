@@ -144,7 +144,7 @@ Everything outside the core guarantee is faked behind a port or cut on purpose �
 | Reactors to auto-advance the pipeline | Compliance on `deposit.confirmed`, reconcile on `payout.completed` — today each step is invoked directly |
 | Manual-review resolution flow | `compliance.review_required` only pauses; a human verdict should resume or refund |
 | Webhook hardening | HMAC-over-body + dedup/replay storage, beyond the shared-secret check |
-| Read endpoints + `currency` column over `ledger_entries` | Make the audit ledger queryable for reporting |
+| More read endpoints + `currency` column over `ledger_entries` | `GET /operations/{id}/ledger` already serves the materialized ledger; the `currency` column is still derivable-from-account, added when a query needs it |
 | CI pipeline (GitHub Actions) | Run the Pest suite on every push |
 
 ## 🤖 How this was built
