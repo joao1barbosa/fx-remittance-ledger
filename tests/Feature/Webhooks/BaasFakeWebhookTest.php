@@ -25,7 +25,7 @@ it('confirms the deposit from a webhook', function () {
         ])
         ->assertAccepted();
 
-    $event = EloquentStoredEvent::query()->get()->last()->toStoredEvent()->event;
+    $event = EloquentStoredEvent::query()->where('aggregate_uuid', $uuid)->orderBy('id')->get()->last()->toStoredEvent()->event;
     expect($event)->toBeInstanceOf(DepositConfirmed::class)
         ->and($event->providerRef)->toBe('E-abc-123');
 });
