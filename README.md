@@ -49,11 +49,18 @@ approved. This keeps a single consistency boundary and makes the gate trivially 
 belongs in a reactor on `deposit.confirmed` — a genuinely external, latency-bound service — so
 deposit confirmation never blocks on a third party; here it is driven synchronously. (2)
 `compliance.review_required` only sets the status; the manual-review resolution is not implemented.
-When a human resolves a review it yields either `approved` (proceed) or `rejected`, and
-`compliance.rejected` drives `refund.initiated` — a router that, on the event, dispatches to the
-correct provider's refund worker (per-provider, since each rail refunds differently). Because the
-aggregate owns the same events and the same conversion invariant either way, adding the reactor, the
-review resolution, and the refund router later is additive — no new migration, no lost facts.
+When a human resolves a review it yields either `approved` (proceed) or `rejected`. Because the
+aggregate owns the same events and the same conversion invariant either way, adding the reactor and
+the review resolution later is additive — no new migration, no lost facts.
+
+**Refund is a shared reaction with two triggers, both deferred.** Once the deposit is confirmed the
+customer's BRL is held, so any downstream terminal failure must return it: `compliance.rejected` (a
+review resolved against the customer) and `conversion.failed` (the exchange order could not be
+filled — liquidity, timeout, rejection) both drive `refund.initiated`. That is a single router
+that, on the event, dispatches to the correct provider's refund worker (per-provider, since each
+rail refunds differently). Both `compliance.rejected` and `conversion.failed` are durable facts, so
+the refund router is additive later — the `convert` slice records the successful path and the
+slippage alert now; the failure fact and its refund reaction are a follow-up slice.
 
 **Confirmation is terminal for the deposit step — it wins over the window.** Once a deposit is
 confirmed, the operation stops watching the clock: a *second* deposit is refused as "already
