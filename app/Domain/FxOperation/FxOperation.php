@@ -204,6 +204,12 @@ final class FxOperation extends AggregateRoot
         $this->complianceDecision = ComplianceDecision::ReviewRequired;
     }
 
+    /** The BRL to convert; the ConvertHandler reads it to size the exchange order. */
+    public function brlAmount(): ?Money
+    {
+        return $this->brlAmount;
+    }
+
     /**
      * Execute the conversion into USDC. Fail-closed gate: only an Approved
      * decision proceeds; null (never screened) and ReviewRequired both refuse.
