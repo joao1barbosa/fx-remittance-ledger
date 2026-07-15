@@ -13,16 +13,13 @@ use Illuminate\Http\Request;
 /**
  * Per-provider inbound edge for the fake BaaS: the anti-corruption layer that
  * turns this provider's payload shape into the canonical inputs, then delegates
- * to the provider-agnostic ConfirmDepositHandler. All I/O and payload-shape
- * knowledge stops here; nothing downstream knows a BaaS exists.
+ * to the provider-agnostic ConfirmDepositHandler.
  */
 final class BaasFakeWebhookController
 {
     public function __invoke(Request $request, ConfirmDepositHandler $handler): JsonResponse
     {
         // TRUST BOUNDARY: reject before any work if the shared secret mismatches.
-        // ponytail: shared-secret header is enough for a fake rail; a real BaaS
-        // adapter verifies a per-provider HMAC over the raw request body.
         abort_unless(
             hash_equals(
                 (string) config('services.baas_fake.webhook_secret'),

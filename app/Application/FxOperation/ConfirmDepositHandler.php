@@ -10,9 +10,7 @@ use DateTimeImmutable;
 
 /**
  * Canonical entry point for a confirmed deposit: provider-agnostic inputs in,
- * one command on the pure aggregate. Unlike the quote/compliance seams there is
- * no provider dependency — the payload already arrived, inbound has nothing to
- * call outward. Payload-shape and auth live in the per-provider webhook edge.
+ * one command on the pure aggregate.
  */
 final class ConfirmDepositHandler
 {
