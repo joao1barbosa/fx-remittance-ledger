@@ -98,6 +98,9 @@ final class FxOperation extends AggregateRoot
         $n = $brlAmount->cents * $rate->scaled * $netBps;
         $d = Rate::SCALE * 10_000;
         $quotedUsd = new Money(intdiv(2 * $n + $d, 2 * $d), Currency::USD);
+        if ($quotedUsd->cents <= 0) {
+            throw new DomainException('Quote prices to zero USD; amount is too small to remit.');
+        }
 
         $this->recordThat(new QuoteCreated(
             operationId: $operationId,
