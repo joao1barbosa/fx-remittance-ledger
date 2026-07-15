@@ -84,3 +84,26 @@ it('refuses to confirm settlement before it was initiated', function () {
 
     $fake->assertNothingRecorded();
 });
+
+it('confirms settlement at most once — a re-delivered webhook does not pay out twice', function () {
+    // Retry/re-delivery is normal on a webhook boundary. A second confirmation of
+    // an already-settled operation must be a silent no-op, never a second payout.
+    FxOperation::fake('op-123')
+        ->given([
+            ...initiatedOperation(),
+            new SettlementCompleted(
+                operationId: 'op-123',
+                usdAmount: new Money(22730, Currency::USD),
+            ),
+            new PayoutCompleted(
+                operationId: 'op-123',
+                usdAmount: new Money(22730, Currency::USD),
+                destinationRef: 'ach-9',
+            ),
+        ])
+        ->when(fn (FxOperation $op) => $op->confirmSettlement(new SettlementFill(
+            usd: new Money(22730, Currency::USD),
+            destinationRef: 'ach-9',
+        )))
+        ->assertNothingRecorded();
+});
