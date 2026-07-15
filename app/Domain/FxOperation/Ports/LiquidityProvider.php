@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\FxOperation;
+namespace App\Domain\FxOperation\Ports;
 
-use App\Domain\Shared\Money;
+use App\Domain\Shared\ValueObjects\Money;
 
 /**
  * Open a USDC->USD off-ramp order and return its ref. Async — the

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Application\FxOperation;
 
-use App\Domain\FxOperation\ExchangeRateProvider;
+use App\Domain\FxOperation\Ports\ExchangeRateProvider;
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
 use DateTimeImmutable;
 
 /**

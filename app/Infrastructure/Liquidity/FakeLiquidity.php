@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Liquidity;
 
-use App\Domain\FxOperation\LiquidityProvider;
-use App\Domain\Shared\Money;
+use App\Domain\FxOperation\Ports\LiquidityProvider;
+use App\Domain\Shared\ValueObjects\Money;
 
 /** Returns a preset order ref for tests and the slice; defaults deterministic. No I/O. */
 final class FakeLiquidity implements LiquidityProvider

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\FxOperation;
+namespace App\Domain\Shared\Enums;
 
 // The screening provider's verdict, passed into the aggregate as data. Approved
 // lets the operation proceed to conversion; ReviewRequired pauses it for a human.

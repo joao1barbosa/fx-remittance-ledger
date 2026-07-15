@@ -2,9 +2,9 @@
 
 use App\Domain\FxOperation\Events\QuoteCreated;
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Rate;
 
 it('quotes the exact USD amount for a given rate, spread and taxes', function () {
     FxOperation::fake('op-123')

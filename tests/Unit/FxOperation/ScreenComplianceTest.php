@@ -1,16 +1,16 @@
 <?php
 
-use App\Domain\FxOperation\ComplianceDecision;
-use App\Domain\FxOperation\DepositProvider;
+use App\Domain\Shared\Enums\ComplianceDecision;
+use App\Domain\Shared\Enums\DepositProvider;
 use App\Domain\FxOperation\Events\ComplianceApproved;
 use App\Domain\FxOperation\Events\ComplianceReviewRequired;
 use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\OperationCancelled;
 use App\Domain\FxOperation\Events\QuoteCreated;
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Rate;
 
 // A quote whose deposit is already confirmed — the state compliance screens against.
 function confirmedDeposit(): array

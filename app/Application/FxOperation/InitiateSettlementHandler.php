@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Application\FxOperation;
 
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\FxOperation\LiquidityProvider;
+use App\Domain\FxOperation\Ports\LiquidityProvider;
 
 /**
  * Call-site for the off-ramp: reads the executed USDC off the aggregate to size

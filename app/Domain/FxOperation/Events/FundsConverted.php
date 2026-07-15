@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\FxOperation\Events;
 
-use App\Domain\Shared\Money;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Rate;
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
 
 final class FundsConverted extends ShouldBeStored

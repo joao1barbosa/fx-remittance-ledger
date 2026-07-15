@@ -5,8 +5,8 @@ use App\Domain\FxOperation\Events\PayoutCompleted;
 use App\Domain\FxOperation\Events\ReconciliationDiscrepancy;
 use App\Domain\FxOperation\Events\SettlementCompleted;
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
 
 // A fully settled operation: converted, off-ramped, and paid out.
 function settledOperation(): array

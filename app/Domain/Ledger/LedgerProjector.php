@@ -8,6 +8,8 @@ use App\Domain\FxOperation\Events\DepositConfirmed;
 use App\Domain\FxOperation\Events\FundsConverted;
 use App\Domain\FxOperation\Events\PayoutCompleted;
 use App\Domain\FxOperation\Events\SettlementCompleted;
+use App\Domain\Shared\Enums\LedgerAccount;
+use App\Domain\Shared\ValueObjects\LedgerLine;
 
 /**
  * The double-entry ledger as a projection over the operation's events. Rebuilt by

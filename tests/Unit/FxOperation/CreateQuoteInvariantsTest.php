@@ -1,9 +1,9 @@
 <?php
 
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Rate;
 
 // A valid createQuote call; each test mutates exactly one input to break one
 // invariant. All money math is integer; the aggregate stays pure.

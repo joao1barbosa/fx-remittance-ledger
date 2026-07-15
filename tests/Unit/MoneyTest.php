@@ -1,7 +1,7 @@
 <?php
 
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
 
 it('holds an exact integer amount of cents', function () {
     $money = new Money(15000, Currency::BRL);

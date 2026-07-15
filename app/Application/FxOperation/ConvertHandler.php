@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\FxOperation;
 
-use App\Domain\FxOperation\CryptoExchange;
+use App\Domain\FxOperation\Ports\CryptoExchange;
 use App\Domain\FxOperation\FxOperation;
 
 /**

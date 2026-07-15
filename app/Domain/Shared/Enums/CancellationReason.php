@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\FxOperation;
+namespace App\Domain\Shared\Enums;
 
 // Why an operation was cancelled, carried on operation.cancelled so the audit
 // trail names the cause without a lookup.

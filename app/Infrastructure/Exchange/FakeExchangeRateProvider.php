@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Exchange;
 
-use App\Domain\FxOperation\ExchangeRateProvider;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Rate;
+use App\Domain\FxOperation\Ports\ExchangeRateProvider;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Rate;
 
 /**
  * Deterministic rate for tests and the vertical slice: 1 USD = 5 BRL,

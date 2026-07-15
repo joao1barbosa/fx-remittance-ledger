@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\FxOperation;
+namespace App\Domain\FxOperation\Ports;
 
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Rate;
 
 /**
  * Port for the raw mid-market rate only (amount of `to` per 1 unit of `from`).

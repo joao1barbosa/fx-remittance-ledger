@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\FxOperation;
 
-use App\Domain\FxOperation\DepositProvider;
+use App\Domain\Shared\Enums\DepositProvider;
 use App\Domain\FxOperation\FxOperation;
 use DateTimeImmutable;
 

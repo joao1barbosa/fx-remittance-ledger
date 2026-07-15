@@ -1,13 +1,13 @@
 <?php
 
-use App\Domain\FxOperation\ConversionFill;
+use App\Domain\Shared\ValueObjects\ConversionFill;
 use App\Domain\FxOperation\Events\ComplianceApproved;
 use App\Domain\FxOperation\Events\ConversionSlippageExceeded;
 use App\Domain\FxOperation\Events\FundsConverted;
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Rate;
 
 function approvedOperation(): array
 {

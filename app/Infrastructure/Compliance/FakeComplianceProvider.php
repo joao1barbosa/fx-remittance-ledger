@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Compliance;
 
-use App\Domain\FxOperation\ComplianceDecision;
-use App\Domain\FxOperation\ComplianceProvider;
+use App\Domain\Shared\Enums\ComplianceDecision;
+use App\Domain\FxOperation\Ports\ComplianceProvider;
 
 /**
  * Deterministic screening for tests and the vertical slice: always approves.

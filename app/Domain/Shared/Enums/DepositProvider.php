@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\FxOperation;
+namespace App\Domain\Shared\Enums;
 
 // Which integration reported a deposit — carried on deposit events so the audit
 // trail names the source without a lookup. Serializes as its scalar value via

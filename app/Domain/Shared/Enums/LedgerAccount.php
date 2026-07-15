@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Ledger;
+namespace App\Domain\Shared\Enums;
 
 /**
  * The chart of accounts for one operation. Each account is single-currency, so

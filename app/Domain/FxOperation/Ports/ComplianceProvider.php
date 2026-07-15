@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\FxOperation;
+namespace App\Domain\FxOperation\Ports;
+
+use App\Domain\Shared\Enums\ComplianceDecision;
 
 /**
  * Port for compliance screening (KYC/KYB, sanctions, PEP, adverse media).

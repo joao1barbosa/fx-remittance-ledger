@@ -2,9 +2,9 @@
 
 use App\Domain\FxOperation\Events\QuoteCreated;
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Rate;
 
 // Isolates the divide: spread = taxes = 0 (netBps = 10_000), so quotedUsd is
 // exactly brlCents * rateScaled / SCALE, rounded half-up at the cent boundary.

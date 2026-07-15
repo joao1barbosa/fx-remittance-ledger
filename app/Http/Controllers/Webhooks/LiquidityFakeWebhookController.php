@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Webhooks;
 
 use App\Application\FxOperation\ConfirmSettlementHandler;
-use App\Domain\FxOperation\SettlementFill;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
+use App\Domain\Shared\ValueObjects\SettlementFill;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

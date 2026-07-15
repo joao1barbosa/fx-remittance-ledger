@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\FxOperation;
 
-use App\Domain\FxOperation\ComplianceProvider;
+use App\Domain\FxOperation\Ports\ComplianceProvider;
 use App\Domain\FxOperation\FxOperation;
 
 /**

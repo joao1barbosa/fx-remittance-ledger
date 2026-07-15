@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Application\FxOperation;
 
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\FxOperation\SettlementFill;
+use App\Domain\Shared\ValueObjects\SettlementFill;
 
 /**
  * Canonical entry point for a completed off-ramp: provider-agnostic fill in,

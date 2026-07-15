@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Ledger;
+namespace App\Domain\Shared\ValueObjects;
+
+use App\Domain\Shared\Enums\LedgerAccount;
 
 /** One double-entry posting line: an account moved by a debit or a credit, in cents. */
 final readonly class LedgerLine

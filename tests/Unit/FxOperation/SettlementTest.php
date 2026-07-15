@@ -5,10 +5,10 @@ use App\Domain\FxOperation\Events\PayoutCompleted;
 use App\Domain\FxOperation\Events\SettlementCompleted;
 use App\Domain\FxOperation\Events\SettlementInitiated;
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\FxOperation\SettlementFill;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\ValueObjects\SettlementFill;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Rate;
 
 // An operation whose funds are already converted (approved + FundsConverted).
 function convertedOperation(): array

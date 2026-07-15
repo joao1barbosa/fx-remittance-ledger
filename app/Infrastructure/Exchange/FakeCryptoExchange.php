@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Exchange;
 
-use App\Domain\FxOperation\ConversionFill;
-use App\Domain\FxOperation\CryptoExchange;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\ValueObjects\ConversionFill;
+use App\Domain\FxOperation\Ports\CryptoExchange;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Rate;
 
 /** Returns a preset fill for tests and the slice; defaults to a deterministic one. No I/O. */
 final class FakeCryptoExchange implements CryptoExchange

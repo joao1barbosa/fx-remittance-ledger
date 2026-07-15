@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Webhooks;
 
 use App\Application\FxOperation\ConfirmDepositHandler;
-use App\Domain\FxOperation\DepositProvider;
+use App\Domain\Shared\Enums\DepositProvider;
 use DateTimeImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

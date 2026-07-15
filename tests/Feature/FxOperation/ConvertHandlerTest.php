@@ -1,14 +1,14 @@
 <?php
 
 use App\Application\FxOperation\ConvertHandler;
-use App\Domain\FxOperation\ComplianceDecision;
-use App\Domain\FxOperation\ConversionFill;
-use App\Domain\FxOperation\DepositProvider;
+use App\Domain\Shared\Enums\ComplianceDecision;
+use App\Domain\Shared\ValueObjects\ConversionFill;
+use App\Domain\Shared\Enums\DepositProvider;
 use App\Domain\FxOperation\Events\FundsConverted;
 use App\Domain\FxOperation\FxOperation;
-use App\Domain\Shared\Currency;
-use App\Domain\Shared\Money;
-use App\Domain\Shared\Rate;
+use App\Domain\Shared\Enums\Currency;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Rate;
 use App\Infrastructure\Exchange\FakeCryptoExchange;
 use Illuminate\Support\Str;
 use Spatie\EventSourcing\StoredEvents\Models\EloquentStoredEvent;

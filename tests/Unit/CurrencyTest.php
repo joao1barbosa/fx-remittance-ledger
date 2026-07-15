@@ -1,6 +1,6 @@
 <?php
 
-use App\Domain\Shared\Currency;
+use App\Domain\Shared\Enums\Currency;
 
 it('rejects unknown currency codes at the parse boundary', function () {
     Currency::from('XYZ');

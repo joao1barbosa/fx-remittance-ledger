@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\FxOperation\Events;
 
-use App\Domain\Shared\Money;
+use App\Domain\Shared\ValueObjects\Money;
 use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
 
 /** USD landed in the settlement account; the elided off-ramp fee is in usdc - usd. */
