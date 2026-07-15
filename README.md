@@ -51,6 +51,15 @@ per-command invariants live in `AGENTS.md`; the aggregate is `app/Domain/FxOpera
   `fx_exchange` account closes the conversion legs. **Reconciliation asserts every intermediate
   holding nets to zero** — a cent stuck in any holding surfaces as `reconciliation.discrepancy`.
 
+- **The ledger is materialized into `ledger_entries` as an auditable read-model** (a Spatie projector,
+  `app/Projectors/LedgerEntryProjector.php`, registered explicitly in `config/event-sourcing.php`).
+  The event stream stays the source of truth; the table is a queryable projection, reconstructed by
+  replay (`event-sourcing:replay` truncates and rebuilds it) and **never touched by an UPDATE**. The
+  projector reuses the in-memory `LedgerProjector` for the posting rules rather than re-deriving them.
+  Deliberately, **reconciliation does not read this table** — it re-projects from the events
+  independently. Trusting the projection to verify itself is circular; re-deriving from the source of
+  truth is precisely what lets reconcile detect a drift in the projection.
+
 ## How to run
 
 Requires Docker and PHP 8.3 / Composer locally.
@@ -80,9 +89,9 @@ auth, no multi-tenancy, no retry/backoff machinery.
 **Deferred infrastructure, all additive because the facts are already durable.** `settlement.failed`
 classification/retry and the refund router (below) are documented but unbuilt. The **reactors** that
 would push the pipeline forward on their own — compliance screening on `deposit.confirmed`, reconcile
-on `payout.completed` — are not wired; each handler is invoked directly. The ledger is **recomputed
-by replay on demand** rather than persisted to a read-model table: the reconciliation invariant needs
-no stored balance and replay is the source of truth, so a projection table is only an optimization.
+on `payout.completed` — are not wired; each handler is invoked directly. The materialized ledger
+(`ledger_entries`, see Design) carries no `currency` column — it is derivable from the account, so it
+is left for when a query needs it; there are no read endpoints over the table yet either.
 Webhook hardening beyond the shared secret (HMAC-over-body, dedup/replay storage) is left out.
 
 **Late deposit → cancel, not refund (a stated assumption).** `deposit.expired` cascades to

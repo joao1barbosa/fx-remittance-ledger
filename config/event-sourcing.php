@@ -22,7 +22,8 @@ return [
      * Projectors can be registered in this array or a service provider.
      */
     'projectors' => [
-        // App\Projectors\YourProjector::class
+        // Materializes the double-entry ledger into `ledger_entries` (auditable read-model).
+        App\Projectors\LedgerEntryProjector::class,
     ],
 
     /*

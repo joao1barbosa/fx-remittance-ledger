@@ -14,7 +14,7 @@ use App\Application\FxOperation\ScreenComplianceHandler;
 use App\Domain\FxOperation\DepositProvider;
 use App\Domain\FxOperation\SettlementFill;
 use App\Domain\Ledger\LedgerAccount;
-use App\Domain\Ledger\LedgerProjector;
+use App\Models\LedgerEntry;
 use App\Domain\Shared\Currency;
 use App\Domain\Shared\Money;
 use App\Infrastructure\Compliance\FakeComplianceProvider;
@@ -73,10 +73,22 @@ final class FxDemo extends Command
         }
         $this->newLine();
 
-        $ledger = (new LedgerProjector)->project($events);
-        $this->renderLedger($ledger);
+        // Render from the materialized ledger: a SELECT on the persisted read-model that
+        // the LedgerEntryProjector wrote as the operation ran — not a recompute in memory.
+        $rows = LedgerEntry::query()
+            ->where('aggregate_uuid', $id)
+            ->selectRaw('account, sum(debit) as debit, sum(credit) as credit')
+            ->groupBy('account')
+            ->get()
+            ->keyBy('account');
 
-        if ($ledger->holdingsBalanced()) {
+        $this->renderLedger($rows);
+
+        $holdingsBalanced = collect(LedgerAccount::cases())
+            ->filter(fn (LedgerAccount $a) => $a->isHolding())
+            ->every(fn (LedgerAccount $a) => (int) ($rows[$a->value]->debit ?? 0) - (int) ($rows[$a->value]->credit ?? 0) === 0);
+
+        if ($holdingsBalanced) {
             $this->newLine();
             $this->info('All holdings net to zero — no cent lost. Operation reconciled.');
 
@@ -89,17 +101,12 @@ final class FxDemo extends Command
         return self::FAILURE;
     }
 
-    private function renderLedger(LedgerProjector $ledger): void
+    private function renderLedger(\Illuminate\Support\Collection $ledger): void
     {
         $rows = [];
         foreach (LedgerAccount::cases() as $account) {
-            $debit = $credit = 0;
-            foreach ($ledger->lines() as $line) {
-                if ($line->account === $account) {
-                    $debit += $line->debit;
-                    $credit += $line->credit;
-                }
-            }
+            $debit = (int) ($ledger[$account->value]->debit ?? 0);
+            $credit = (int) ($ledger[$account->value]->credit ?? 0);
 
             $rows[] = [
                 $account->value,
